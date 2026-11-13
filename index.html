@@ -3,7 +3,7 @@
 <!--
 Author: Sai Vignesh Golla
 LinkedIn: https://www.linkedin.com/in/saivigneshgolla
-Version: 1.2.0
+Version: 1.3.0
 -->
 
 <head>
@@ -285,6 +285,15 @@ Version: 1.2.0
                         <button onclick="forgetNames()" class="btn btn-danger">Forget seen 🔄️</button>
                     </div>
                     <ul id="nameList" class="list-group mb-3"></ul>
+                    <h3 class="mt-4">Name History (<span id="nameHistoryCount">0</span>)</h3>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr><th>#</th><th>Name</th><th>How</th><th>Domains</th></tr>
+                            </thead>
+                            <tbody id="nameHistoryList"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </main>

@@ -504,17 +504,47 @@ function variationWord(base) {
     return parts.join("");
 }
 
-function seenNames() {
+const MODE_LABELS = { syllable: "Pronounceable", chaos: "Pure Chaos", variation: "Variation of" };
+
+// Every name ever shown, newest first: { name, how, domains } where domains is "" until checked.
+function nameHistory() {
     try {
-        return new Set(JSON.parse(localStorage.getItem("seenNames") || "[]"));
+        return JSON.parse(localStorage.getItem("nameHistory") || "[]");
     } catch {
-        return new Set();
+        return [];
     }
 }
 
+function saveHistory(history) {
+    localStorage.setItem("nameHistory", JSON.stringify(history));
+    renderHistory();
+}
+
+function seenNames() {
+    return new Set(nameHistory().map((entry) => entry.name));
+}
+
+function renderHistory() {
+    const history = nameHistory();
+    document.getElementById("nameHistoryCount").textContent = history.length;
+    const body = document.getElementById("nameHistoryList");
+    body.innerHTML = "";
+    history.forEach((entry, i) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>${history.length - i}</td><td><b>${capitalize(entry.name)}</b></td>` +
+            `<td>${entry.how}</td><td>${entry.domains || "not checked"}</td>`;
+        body.appendChild(row);
+    });
+}
+
+function capitalize(word) {
+    return word[0].toUpperCase() + word.slice(1);
+}
+
 function forgetNames() {
-    localStorage.removeItem("seenNames");
+    localStorage.removeItem("nameHistory");
     document.getElementById("nameList").innerHTML = "";
+    renderHistory();
     showToast("Memory wiped 🧽. Old names may come back now.");
 }
 
@@ -548,14 +578,15 @@ function generateNames(mode) {
             words.push(word);
         }
     }
-    localStorage.setItem("seenNames", JSON.stringify([...seen]));
+    const how = mode === "variation" ? `${MODE_LABELS.variation} ${capitalize(base.toLowerCase())}` : MODE_LABELS[mode];
+    saveHistory(words.map((name) => ({ name, how, domains: "" })).reverse().concat(nameHistory()));
     const list = document.getElementById("nameList");
     list.innerHTML = "";
     for (const word of words) {
         const item = document.createElement("li");
         item.className = "list-group-item d-flex justify-content-between";
         item.dataset.name = word;
-        item.innerHTML = `<b>${word[0].toUpperCase() + word.slice(1)}</b><span class="domains"></span>`;
+        item.innerHTML = `<b>${capitalize(word)}</b><span class="domains"></span>`;
         list.appendChild(item);
     }
     if (words.length < count) {
@@ -590,5 +621,13 @@ async function checkDomains() {
             }
         }
         label.textContent = free.length ? "free: " + free.join(", ") : "all taken 😢";
+        const history = nameHistory();
+        const entry = history.find((e) => e.name === name);
+        if (entry) {
+            entry.domains = label.textContent;
+            saveHistory(history);
+        }
     }
 }
+
+renderHistory();
