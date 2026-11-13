@@ -3,7 +3,7 @@
 <!--
 Author: Sai Vignesh Golla
 LinkedIn: https://www.linkedin.com/in/saivigneshgolla
-Version: 1.1.2
+Version: 1.2.0
 -->
 
 <head>
@@ -66,6 +66,13 @@ Version: 1.1.2
                             aria-controls="calculateTime-tab" aria-selected="false"
                             onclick="localStorage.setItem('app', 'calculateTime')">
                             Balance Work & Life 🧘🏼‍♂️🏢
+                        </button>
+                    </li>
+                    <li class="nav-item list-vertical me-3 mb-1" role="presentation">
+                        <button class="nav-link col-12 tab-border" id="nameGen" data-bs-toggle="pill"
+                            data-bs-target="#nameGen-tab" type="button" role="tab" aria-controls="nameGen-tab"
+                            aria-selected="false" onclick="localStorage.setItem('app', 'nameGen')">
+                            Name Your Startup 🦄🔤
                         </button>
                     </li>
                     <li id="tooltip-all" class="nav-item list-vertical me-2 mb-1" hidden>
@@ -251,6 +258,33 @@ Version: 1.1.2
                         <h3>⚠️ Well, That doesn't seem right 🤔!</h3>
                         <h3 id="result-error"></h3>
                     </div>
+                </div>
+
+                <!-- NAME YOUR STARTUP -->
+                <div class="tab-pane fade" id="nameGen-tab" role="tabpanel" aria-labelledby="nameGen" tabindex="0">
+                    <h2>Every good name is taken 😩</h2>
+                    <p>Every 4-letter .com is registered, and most pleasant 5-letter ones too. So stop
+                        thinking and let the dice name your startup. Words are built from real syllables (an onset,
+                        a vowel sound, an ending), or from pure chaos. No word ever shows up twice. Tap
+                        <b>Check domains</b> to see which of <i>name</i>.com, hey<i>name</i>.com and
+                        meet<i>name</i>.com nobody owns yet.</p>
+                    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                        <label for="nameMin">Letters</label>
+                        <input id="nameMin" type="number" class="form-control w-10 p-1" value="4" min="2" max="12">
+                        <label for="nameMax">to</label>
+                        <input id="nameMax" type="number" class="form-control w-10 p-1" value="6" min="2" max="12">
+                        <label for="nameCount">How many</label>
+                        <input id="nameCount" type="number" class="form-control w-10 p-1" value="12" min="1" max="60">
+                    </div>
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        <button onclick="generateNames('syllable')" class="btn btn-primary">Pronounceable 🗣️</button>
+                        <button onclick="generateNames('chaos')" class="btn btn-primary">Pure Chaos 🎲</button>
+                        <input id="nameBase" type="text" class="form-control w-25 p-1" placeholder="a word you like">
+                        <button onclick="generateNames('variation')" class="btn btn-primary">Variations 🧬</button>
+                        <button onclick="checkDomains()" class="btn btn-success">Check domains 🌐</button>
+                        <button onclick="forgetNames()" class="btn btn-danger">Forget seen 🔄️</button>
+                    </div>
+                    <ul id="nameList" class="list-group mb-3"></ul>
                 </div>
             </div>
         </main>

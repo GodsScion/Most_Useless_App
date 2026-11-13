@@ -445,3 +445,150 @@ function resetAll() {
     g_AlarmOn = false;
     hideWarning();
 }
+
+// ------------------------- NAME YOUR STARTUP -------------------------
+const ONSETS = ["", "b", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "r", "s", "t", "v", "w", "y", "z",
+    "bl", "br", "ch", "cl", "dr", "fl", "fr", "gl", "gr", "kl", "kr", "pl", "pr", "sh", "sk", "sl",
+    "sn", "sp", "st", "sw", "th", "tr"];
+const NUCLEI = ["a", "e", "i", "o", "u", "ee", "oo", "ai", "ay", "ea", "ie", "oa", "y"];
+const CODAS = ["", "", "", "", "l", "m", "n", "r", "s", "x", "k", "nd", "nt", "rn", "lt", "sk", "st"];
+const VOWELS = "aeiou";
+const CONSONANTS = "bcdfghjklmnpqrstvwxyz";
+const MAX_TRIES = 10000;
+
+function pick(list) {
+    return list[Math.floor(Math.random() * list.length)];
+}
+
+function randomInt(low, high) {
+    return low + Math.floor(Math.random() * (high - low + 1));
+}
+
+// Stacks onset + nucleus syllables to a random length, then maybe one ending consonant.
+function syllableWord(minLen, maxLen) {
+    for (let tries = 0; tries < MAX_TRIES; tries++) {
+        const target = randomInt(minLen, maxLen);
+        let word = "";
+        while (word.length < target) {
+            word += pick(ONSETS) + pick(NUCLEI);
+        }
+        word += pick(CODAS);
+        if (word.length >= minLen && word.length <= maxLen) {
+            return word;
+        }
+    }
+    return "";
+}
+
+// Each letter is a coin flip between a vowel and a consonant.
+function chaosWord(minLen, maxLen) {
+    let word = "";
+    const length = randomInt(minLen, maxLen);
+    for (let i = 0; i < length; i++) {
+        word += Math.random() < 0.5 ? pick(VOWELS) : pick(CONSONANTS);
+    }
+    return word;
+}
+
+// Swaps one vowel run or consonant run of the base word: "neema" -> "neesa", "noma"...
+function variationWord(base) {
+    const parts = base.toLowerCase().match(/[aeiouy]+|[^aeiouy]+/g);
+    const i = Math.floor(Math.random() * parts.length);
+    if ("aeiouy".includes(parts[i][0])) {
+        parts[i] = pick(NUCLEI);
+    } else if (i === parts.length - 1) {
+        parts[i] = pick(CODAS);
+    } else {
+        parts[i] = pick(ONSETS.filter(Boolean));
+    }
+    return parts.join("");
+}
+
+function seenNames() {
+    try {
+        return new Set(JSON.parse(localStorage.getItem("seenNames") || "[]"));
+    } catch {
+        return new Set();
+    }
+}
+
+function forgetNames() {
+    localStorage.removeItem("seenNames");
+    document.getElementById("nameList").innerHTML = "";
+    showToast("Memory wiped 🧽. Old names may come back now.");
+}
+
+function generateNames(mode) {
+    const minLen = Number(document.getElementById("nameMin").value);
+    const maxLen = Number(document.getElementById("nameMax").value);
+    const count = Number(document.getElementById("nameCount").value);
+    const base = document.getElementById("nameBase").value.trim();
+    if (mode === "variation" && !/^[a-zA-Z]{2,}$/.test(base)) {
+        showToast("Type a word first 🙄 (letters only).");
+        return;
+    }
+    if (minLen < 2 || maxLen > 12 || minLen > maxLen) {
+        showToast("Letters must be between 2 and 12, smallest first 🤨.");
+        return;
+    }
+    const seen = seenNames();
+    seen.add(base.toLowerCase());
+    const words = [];
+    for (let tries = 0; tries < MAX_TRIES && words.length < count; tries++) {
+        let word;
+        if (mode === "syllable") {
+            word = syllableWord(minLen, maxLen);
+        } else if (mode === "chaos") {
+            word = chaosWord(minLen, maxLen);
+        } else {
+            word = variationWord(base);
+        }
+        if (word.length >= 2 && !seen.has(word)) {
+            seen.add(word);
+            words.push(word);
+        }
+    }
+    localStorage.setItem("seenNames", JSON.stringify([...seen]));
+    const list = document.getElementById("nameList");
+    list.innerHTML = "";
+    for (const word of words) {
+        const item = document.createElement("li");
+        item.className = "list-group-item d-flex justify-content-between";
+        item.dataset.name = word;
+        item.innerHTML = `<b>${word[0].toUpperCase() + word.slice(1)}</b><span class="domains"></span>`;
+        list.appendChild(item);
+    }
+    if (words.length < count) {
+        showToast("Ran out of fresh names 🫠. Widen the length or forget seen names.");
+    }
+}
+
+// RDAP at the .com registry answers 404 when nobody has registered a domain.
+async function isUnregistered(domain) {
+    try {
+        const response = await fetch(`https://rdap.verisign.com/com/v1/domain/${domain}`);
+        return response.status === 404;
+    } catch {
+        return false;
+    }
+}
+
+async function checkDomains() {
+    const items = document.querySelectorAll("#nameList li");
+    if (items.length === 0) {
+        showToast("Generate some names first 🙃.");
+        return;
+    }
+    for (const item of items) {
+        const name = item.dataset.name;
+        const label = item.querySelector(".domains");
+        label.textContent = "checking…";
+        const free = [];
+        for (const domain of [`${name}.com`, `hey${name}.com`, `meet${name}.com`]) {
+            if (await isUnregistered(domain)) {
+                free.push(domain);
+            }
+        }
+        label.textContent = free.length ? "free: " + free.join(", ") : "all taken 😢";
+    }
+}
